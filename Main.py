@@ -18,7 +18,7 @@ from DB_sqlite3 import DB
 define("port", default=3322, help="run on the given port", type=int)
 
 class Application(tornado.web.Application):
-    def __init__(self):
+    def __init__(self): 
         handlers = [
             (r"/", MainHandler),
             (r"/api/(.*)", ApiHandler),
