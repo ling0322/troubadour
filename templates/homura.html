@@ -1,0 +1,62 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Bug Tracer</title>
+<script src="static/jquery-1.5.2.js"></script>
+<script src="static/jquery.cookie.js"></script>
+<script src="static/jquery.timers-1.2.js"></script>
+<script src="static/homura.js"></script>
+<link rel="stylesheet" type="text/css" href="static/homura.css" />
+</head>
+
+<body>
+<div id="top-container">
+  <div id="statusbar">
+    <img id="twitter-icon" src="static/twitter-on.gif" />
+    <img id="sina-icon" src="static/sina-on.gif" />
+    <span class="status-content">ww</span>
+  </div>
+  <div id="message-bar-container">
+    <div id="message-bar-c1">
+      <div id="message-bar">
+        <span id="message"></span> 
+        <a href="#" onclick="hide_message_bar()">Hide</a>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="signin-container">
+  <div id="signin-main">
+      <div><span id="signin-name"></span>&nbsp;sign in</div>
+      <hr />
+      <form id="signin_form">
+        <div>Username</div>
+        <div><input id="user" class="textbox" type="text" /></div>
+        <div>Password</div>
+        <div><input id="passwd" class="textbox" type="password" /></div>
+        <div class="float-right"><input type="button" value="Cancel" class="white-button" onclick="hide_signin_box()" /></div>
+        <div><input name="" type="submit" value="Sign In" class="blue-button" onclick="md5passwd()" /></div>
+      </form>
+  </div>
+</div>
+<div id="confirm-container">
+  <div id="confirm-main">
+      <span id="confirm-text"></span>
+      <div class="float-right"><input type="submit" value="Cancel" class="white-button" onclick="hide_confirm_box()" /></div>
+      <div class="float-right"><input id="confirm-ok" type="submit" value="OK" class="blue-button"  /></div>
+  </div>
+</div>
+<div id="page-container">
+  <div id="main-content">
+    <h1>H0mur1a:</h1>
+    <div><textarea style="" name="textarea" id="textarea" cols="45" rows="5"></textarea></div>
+    <div><input class="blue-button"id="submit-button" type="submit" value="&nbsp;Tweet&nbsp;" style=" " onclick="return new_note()" /><p class="clear"></p></div>
+    <div id="notes">
+    </div>
+    <div class="foot">&copy;2011 ling0322</div>
+  </div>
+</div>
+
+</body>
+</html>

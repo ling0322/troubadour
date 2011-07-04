@@ -1,0 +1,50 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Troubadour Sign in</title>
+<script src="static/jquery-1.5.2.js"></script>
+<script src="static/jquery.md5.js"></script>
+<link rel="stylesheet" type="text/css" href="static/homura.css" />
+<script type="text/javascript">
+    function to_md5passwd() {
+        $("#md5passwd").val($.md5($("#md5passwd").val()));
+    }
+</script>
+<style type="text/css">
+    .logindiv {
+        position:absolute;
+        width:240px;
+        left:50%;
+        top:30%;
+        margin-left:-120px;
+    } 
+    .textbox {
+        height: 20px;
+        width: 80%;
+        margin-bottom: 5px;
+    }
+    .textloginfailed {
+        color: red;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="logindiv">
+  <form name="input" action="/signin" method="post" onsubmit="to_md5passwd()">
+  <li><h1>Troubadour - Sign In</h1></li>
+  {% if status == 'failed' %}
+    <div class="textloginfailed">Bad username or password!</div>
+  {% end %}
+  <hr />
+  <li>Username</li>
+  <li><input name="username" class="textbox" type="text" /></li>
+  <li>Password</li>
+  <li><input name="md5passwd" id="md5passwd" class="textbox" type="password" /></li>
+  <li><input name="" type="submit" value="Sign In" id="submit-button"  /><li>
+  </form>
+</div>
+</body>
+</html>

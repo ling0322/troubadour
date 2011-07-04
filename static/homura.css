@@ -1,0 +1,234 @@
+﻿body {
+    font-family: "Lucida Grande", "Lucida Sans Unicode", Verdana, Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    margin-left: 0px;
+    margin-right: 0px;
+    list-style-type: none;
+}
+h1 {
+    font-family: "Lucida Grande", "Lucida Sans Unicode", Verdana, Helvetica, Arial, sans-serif;
+    font-size: 24px;
+}
+#page-container {
+	display: none;
+    position : relative;
+    width : 100%;
+    margin-top: 40px;
+}
+a {
+    color: #34a0cc;
+    text-decoration: none;
+    cursor: pointer;
+}
+#main-content {
+    margin: auto; 
+    width: 420px;
+}
+#statusbar {
+    border-bottom-width: 1px;
+    border-bottom-style: solid;
+    border-bottom-color: #C9D7F1;
+    background-color: #FFFFFF;
+    background-color: #FFFFFF;
+    padding: 5px;
+    text-align: right;
+}
+.note-action {
+    margin-left: 8px;
+}
+hr {
+    margin: 8px 0px;
+    width: 100%;
+    height: 1px;
+    background-color: #CCC;
+    border-width: 0px;
+}
+.foot {
+    font-size: 10px;
+    text-align: center;
+}
+a:visited {
+    color: #34a0cc;
+    text-decoration: none;
+}
+a:hover {
+    color: #34a0cc;
+    text-decoration: underline;
+}
+.blue-button {
+	height: 25px;
+    float: right; 
+    margin-top: 8px;
+    margin-bottom: 8px;
+    margin-left: 8px;
+    margin-right: 0px; 
+    padding: 4px 9px;
+    font-size: 12px;
+    border-radius: 4px; 
+    border-style: solid;
+    box-shadow: #28C 0px 0px 5px;
+    border-color: #28C;
+    border-width: 1px;
+    background-image: url(btn-bg.png);
+    color: #FFF;
+}
+.blue-button:hover {
+    float: right; 
+    margin-top: 8px;
+    margin-bottom: 8px;
+    margin-left: 8px;
+    margin-right: 0px; 
+    padding: 4px 9px;
+    font-size: 12px;
+    border-radius: 4px; 
+    border-style: solid;
+    box-shadow: #28C 0px 0px 8px;
+    border-color: #28C;
+    border-width: 1px;
+    background-image: url(btn-bg.png);
+    color: #FFF;
+}
+.white-button {
+	height: 25px;
+    float: right; 
+    margin-top: 8px;
+    margin-bottom: 8px;
+    margin-left: 8px;
+    margin-right: 0px;   
+    padding: 4px 9px;
+    font-size: 12px;
+    border-radius: 4px; 
+    border-style: solid;
+    border-color: #888;
+    border-width: 1px;
+    background-color: #FFF;
+    box-shadow: #CCC 0px 0px 5px;
+    color: #000;
+}
+.white-button:hover {
+    border-color: #333;
+    box-shadow: #CCC 0px 0px 8px;
+
+}
+.note-content {
+    margin: 5px 0px;
+}
+.note-time {
+    margin-left: 8px;
+    color: #AAA;
+    font-family: "Times New Roman", Times, serif;
+}
+
+.clear {
+    clear: both;
+}
+.note {
+}
+#textarea {
+    width: 100%; 
+    border-radius: 4px; 
+    border-color: #CCC;
+    margin: 0px; 
+    padding: 0px;
+    height: 60px;
+}
+#message-bar-c1 {
+	display: inline-block;
+	left: auto;
+    right: auto;
+}
+#message-bar {
+    display: none;
+    font-family: arial, sans-serif;
+    font-weight: bold;
+    border-radius: 5px;
+    background-color: #FFF1A8;
+    padding: 4px 12px;
+
+}
+#message-bar a {
+    font-family: arial, sans-serif;
+    font-weight: bold;
+    color: #00C;
+    margin-right: 8px;
+    margin-left: 8px;
+}
+#top-container {
+    z-index: 23;
+    position: fixed;
+    top: 0px;
+    width: 100%;
+}
+#signin-container {
+
+    z-index: 24;
+    position: fixed;
+    top: 0px;
+    width: 100%;	
+}
+#signin-main {
+	display: none;
+	border-bottom-width: 1px;
+    border-bottom-style: solid;
+    border-bottom-color: #C9D7F1;
+	border-left-width: 1px;
+    border-left-style: solid;
+    border-left-color: #C9D7F1;
+	border-right-width: 1px;
+    border-right-style: solid;
+    border-right-color: #C9D7F1;
+    background-color: #FFFFFF;
+    padding: 20px;
+    width: 200px;
+    height: 160px;
+    margin-left: auto;
+    margin-right: auto;
+}
+#confirm-container {
+
+    z-index: 25;
+    position: fixed;
+    top: 0px;
+    width: 100%;	
+}
+#confirm-main {
+	display: none;
+	border-bottom-width: 1px;
+    border-bottom-style: solid;
+    border-bottom-color: #C9D7F1;
+	border-left-width: 1px;
+    border-left-style: solid;
+    border-left-color: #C9D7F1;
+	border-right-width: 1px;
+    border-right-style: solid;
+    border-right-color: #C9D7F1;
+    background-color: #FFFFFF;
+    padding: 20px;
+    width: 480px;
+    height: 56px;
+    margin-left: auto;
+    margin-right: auto;
+}
+#message-bar-container {
+    width: 100%;
+    margin-top: 6px;
+    text-align: center;
+}
+.float-right {
+    float: right;
+}
+.profile-image {
+    float: left;
+    height: 100%;
+}
+.status {
+	margin-left: 55px;
+}
+.status-content {
+    margin-right: 64px;
+}
+.textbox {
+    height: 20px;
+    width: 100%;
+    margin-bottom: 5px;
+}
