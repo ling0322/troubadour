@@ -15,7 +15,7 @@ import SinaClient
 from tornado.options import define, options
 from DB_sqlite3 import DB
 
-define("port", default=3322, help="run on the given port", type=int)
+define("port", default=3232, help="run on the given port", type=int)
 
 class Application(tornado.web.Application):
     def __init__(self): 
