@@ -72,7 +72,7 @@ class SinaMixin(tornado.auth.OAuthMixin, tornado.web.RequestHandler):
 
     def _oauth_get_user(self, access_token, callback):
         callback = self.async_callback(self._parse_user_response, callback)
-        self.twitter_request(
+        self.sina_request(
             "/users/show/" + access_token["user_id"],
             access_token=access_token, callback=callback)
 
@@ -91,13 +91,13 @@ class SinaMixin(tornado.auth.OAuthMixin, tornado.web.RequestHandler):
 class SinaSignInHanhler(SinaMixin, tornado.web.RequestHandler):
         
     def _on_auth(self, user):
-        user_access_token = self.get_cookie('at')
+        user_access_token = self.get_cookie('access_token')
         access_token = {}
         access_token = user['access_token']
         access_token['screen_name'] = user['name']
         json_at = tornado.escape.json_encode(access_token)
         db = DB()
-        db.update_sina_access_token(user_access_token, json_at)
+        db.update_api_access_token('sina', user_access_token, json_at)
         self.clear_cookie('at')
         self.redirect('/')
         pass
@@ -108,7 +108,6 @@ class SinaSignInHanhler(SinaMixin, tornado.web.RequestHandler):
             self.get_authenticated_user(self.async_callback(self._on_auth))
             return
         
-        self.set_cookie('at', self.get_argument('access_token'))
         self.authenticate_redirect()
         
     pass
@@ -148,9 +147,13 @@ class SinaClient(SinaMixin, tornado.web.RequestHandler):
         t['name'] = tweet['user']['name']
         t['screen_name'] = tweet['user']['screen_name']
         t['created_at'] = tweet['created_at'].replace('+0000', 'UTC')
-        t['id'] = tweet['id']
-        t['in_reply_to_status_id'] = tweet['in_reply_to_status_id']
+        t['id'] = str(tweet['id'])
+        if 'retweeted_status' in tweet:
+            t['in_reply_to_status_id'] = str(tweet['retweeted_status']['id'])
+        else:
+            t['in_reply_to_status_id'] = None
         t['profile_image_url'] = tweet['user']['profile_image_url']
+        t['from'] = 'Sina'
         return t
     
     
@@ -175,13 +178,8 @@ class SinaClient(SinaMixin, tornado.web.RequestHandler):
         in_reply_to = []
         replies = []
             
-        if len(res) > 0:
-            results = res[0]['results']
-            for item in results:
-                if item['annotations']['ConversationRole'] == 'Ancestor':
-                    in_reply_to.append(self._dumpTweet(item['value']))
-                else:
-                    replies.append(self._dumpTweet(item['value']))
+        if 'retweeted_status' in res:
+            in_reply_to.append(self._dumpTweet(res['retweeted_status']))
         
         dump = dict(
             in_reply_to = in_reply_to,
@@ -218,7 +216,7 @@ class SinaClient(SinaMixin, tornado.web.RequestHandler):
         db = DB()
         try: 
             access_token = tornado.escape.json_decode(
-                db.get_sina_access_token(self.get_argument('access_token'))
+                db.get_api_access_token('sina', self.get_argument('access_token'))
                 )
         except:
             raise tornado.web.HTTPError(403)
@@ -238,31 +236,33 @@ class SinaClient(SinaMixin, tornado.web.RequestHandler):
                 path = "/statuses/home_timeline",
                 access_token = {u'secret': secret, u'key': key},
                 callback = self._on_fetch,
+                count = 50,
                 **kwargs
                 )  
         elif request == 'mentions':
             # 得到mention一个用户的Tweet
 
-            self.twitter_request(
+            self.sina_request(
                 path = "/statuses/mentions",
                 page = self.get_argument('page', 1),
                 access_token = {u'secret': secret, u'key': key},
                 callback = self._on_fetch,
+                count = 50,
                 )  
         elif request == 'show':
             #得到某个特定id的Tweet
 
-            self.twitter_request(
+            self.sina_request(
                 path = "/statuses/show/" + str(self.get_argument('id')),
                 access_token = {u'secret': secret, u'key': key},
                 callback = self.async_callback(self._on_fetch, single_tweet = True),
                 ) 
-        elif request == 'details':
+        elif request == 'related_results':
             
             #得到某个特定id的Tweet相关的结果
 
-            self.twitter_request(
-                path = "/related_results/show/" + str(self.get_argument('id')),
+            self.sina_request(
+                path = "/statuses/show/" + str(self.get_argument('id')),
                 access_token = {u'secret': secret, u'key': key},
                 callback = self._on_related_results,
                 ) 

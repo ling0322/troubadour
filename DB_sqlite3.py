@@ -121,7 +121,27 @@ class DB(Singleton.Singleton):
         self.conn.commit()
         return access_token
     
-    def update_twitter_access_token(self, access_token, twitter_access_token):
+    
+    def remove_api_access_token(self, api, access_token):
+        
+        self.cursor.execute("select * from user where access_token = '{0}'".format(access_token))
+        if len(self.cursor.fetchall()) == 0:
+            return False 
+              
+        self.cursor.execute("update user set {0}_access_token = NULL where access_token = '{1}'".format(api, access_token))
+        self.conn.commit()
+        return True        
+    
+    def get_api_access_token(self, api, access_token):
+        
+        self.cursor.execute("select {1}_access_token from user where access_token = '{0}'".format(access_token, api))
+        result = self.cursor.fetchall()
+        if len(result) == 1:
+            return base64.decodestring(result[0][0])
+        else:
+            return False
+        
+    def update_api_access_token(self, api, access_token, api_access_token):
         
         # 首先要检查一下用户是否存在
         
@@ -129,63 +149,12 @@ class DB(Singleton.Singleton):
         if len(self.cursor.fetchall()) == 0:
             return False 
               
-        base64_token = base64.encodestring(twitter_access_token)
-        self.cursor.execute("update user set twitter_access_token = '{0}' where access_token = '{1}'".format(base64_token, access_token))
+        base64_token = base64.encodestring(api_access_token)
+        self.cursor.execute("update user set {2}_access_token = '{0}' where access_token = '{1}'".format(base64_token, access_token, api))
         self.conn.commit()
         return True
     
-    def remove_twitter_access_token(self, access_token):
-        
-        self.cursor.execute("select * from user where access_token = '{0}'".format(access_token))
-        if len(self.cursor.fetchall()) == 0:
-            return False 
-              
-        self.cursor.execute("update user set twitter_access_token = NULL where access_token = '{0}'".format(access_token))
-        self.conn.commit()
-        return True        
-    
-    def get_twitter_access_token(self, access_token):
-        
-        self.cursor.execute("select twitter_access_token from user where access_token = '{0}'".format(access_token))
-        result = self.cursor.fetchall()
-        if len(result) == 1:
-            return base64.decodestring(result[0][0])
-        else:
-            return False
-        
-    def update_sina_access_token(self, access_token, sina_access_token):
-        
-        # 首先要检查一下用户是否存在
-        
-        self.cursor.execute("select * from user where access_token = '{0}'".format(access_token))
-        if len(self.cursor.fetchall()) == 0:
-            return False 
-              
-        base64_token = base64.encodestring(sina_access_token)
-        self.cursor.execute("update user set sina_access_token = '{0}' where access_token = '{1}'".format(base64_token, access_token))
-        self.conn.commit()
-        return True
-    
-    def remove_sina_access_token(self, access_token):
-        
-        self.cursor.execute("select * from user where access_token = '{0}'".format(access_token))
-        if len(self.cursor.fetchall()) == 0:
-            return False 
-              
-        self.cursor.execute("update user set sina_access_token = NULL where access_token = '{0}'".format(access_token))
-        self.conn.commit()
-        return True        
-    
-    def get_sina_access_token(self, access_token):
-        
-        self.cursor.execute("select sina_access_token from user where access_token = '{0}'".format(access_token))
-        result = self.cursor.fetchall()
-        if len(result) == 1:
-            return base64.decodestring(result[0][0])
-        else:
-            return False
-        
-        
+
         
         
         

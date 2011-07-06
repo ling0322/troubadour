@@ -26,7 +26,7 @@ class TwitterSignInHandler(tornado.auth.TwitterMixin, tornado.web.RequestHandler
         
         # 如果更新access_token失败就返回422错误
         
-        if not db.update_twitter_access_token(user_access_token, twitter_access_token):
+        if not db.update_api_access_token('twitter', user_access_token, twitter_access_token):
             raise tornado.web.HTTPError(422)
             return
               
@@ -156,9 +156,13 @@ class TwitterClient(tornado.auth.TwitterMixin, tornado.web.RequestHandler):
         t['name'] = tweet['user']['name']
         t['screen_name'] = tweet['user']['screen_name']
         t['created_at'] = tweet['created_at']
-        t['id'] = tweet['id']
-        t['in_reply_to_status_id'] = tweet['in_reply_to_status_id']
+        t['id'] = str(tweet['id'])
+        if tweet['in_reply_to_status_id'] == None:
+            t['in_reply_to_status_id'] = None
+        else:
+            t['in_reply_to_status_id'] = str(tweet['in_reply_to_status_id'])
         t['profile_image_url'] = tweet['user']['profile_image_url']
+        t['from'] = 'Twitter'
         return t
     
     
@@ -224,7 +228,7 @@ class TwitterClient(tornado.auth.TwitterMixin, tornado.web.RequestHandler):
         db = DB()
         try: 
             access_token = tornado.escape.json_decode(
-                db.get_twitter_access_token(self.get_argument('access_token'))
+                db.get_api_access_token('twitter', self.get_argument('access_token'))
                 )
         except:
             raise tornado.web.HTTPError(403)
@@ -244,6 +248,7 @@ class TwitterClient(tornado.auth.TwitterMixin, tornado.web.RequestHandler):
                 path = "/statuses/home_timeline",
                 access_token = {u'secret': secret, u'key': key},
                 callback = self._on_fetch,
+                count = 50,
                 **kwargs
                 )  
         elif request == 'mentions':
@@ -254,6 +259,7 @@ class TwitterClient(tornado.auth.TwitterMixin, tornado.web.RequestHandler):
                 page = self.get_argument('page', 1),
                 access_token = {u'secret': secret, u'key': key},
                 callback = self._on_fetch,
+                count = 50,
                 )  
         elif request == 'show':
             #得到某个特定id的Tweet
@@ -263,7 +269,7 @@ class TwitterClient(tornado.auth.TwitterMixin, tornado.web.RequestHandler):
                 access_token = {u'secret': secret, u'key': key},
                 callback = self.async_callback(self._on_fetch, single_tweet = True),
                 ) 
-        elif request == 'details':
+        elif request == 'related_results':
             
             #得到某个特定id的Tweet相关的结果
 

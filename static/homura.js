@@ -95,7 +95,7 @@ function API_post(kwargs) {
     });
 }
 
-function twitter_signout() {
+function api_signout(api) {
 	hide_confirm_box();
 	show_message_bar('signing out ...');
 	var access_token = $.cookie('access_token')
@@ -103,17 +103,18 @@ function twitter_signout() {
 		return false;
 	
 	var param = {
-		access_token: access_token
+		access_token: access_token,
+		api: api
 	};
 	API_call(
-			'/api/remove_twitter_access_token',
+			'/api/remove_api_access_token',
 			param,
 			function(body) {
 				hide_message_bar();
 				access_state();
 			},
 			function() {
-				show_message_bar("Oops! twitter signin failed!");
+				show_message_bar("Oops! " + api  + " signin failed!");
 			},
 			3
 			);	
@@ -151,10 +152,17 @@ function twitter_signin() {
 }
 
 function show_signin_box(args) {
-	$('#signin-name').html('Twitter');
+	$('#signin-name').html(args['api']);
+    if (args['direct_signin'] == true) {
+    	$('#direct-signin').show();
+    	$('#goto-signin').hide();
+    } else {
+    	$('#direct-signin').hide();
+    	$('#goto-signin').show();    	
+    }
 	$("#signin-main").slideDown("normal");
 	$('#signin_form').unbind();
-	$('#signin_form').submit(twitter_signin);
+	$('#signin_form').submit(args['callback']);
 }
 
 function show_confirm_box(args) {
@@ -162,6 +170,11 @@ function show_confirm_box(args) {
 	$("#confirm-main").slideDown("normal");
 	$('#confirm-ok').unbind();
 	$('#confirm-ok').click(args['callback']);
+}
+
+function goto_sina_signin_page() {
+	window.location.href='sina_api/access_token';
+	return false;
 }
 
 function access_state(next) {
@@ -180,7 +193,11 @@ function access_state(next) {
 		param,
 		function(body) {
 			state = JSON.parse(body);
-			
+			//
+			// 先把所有的定时器移除掉
+			//
+			$('body').stopTime('get_timeline_twitter');
+			$('body').stopTime('get_timeline_sina');
 			$('#twitter-icon').unbind();
 			if (state['twitter'] == true) {
 				$('#twitter-icon').attr('src', 'static/twitter-on.gif');
@@ -188,12 +205,16 @@ function access_state(next) {
 				$('body').everyTime('60s', 'get_timeline_twitter', async_callback(get_timeline, 'twitter'));
 				$('#twitter-icon').bind('click', async_callback(show_confirm_box, {
 					text: 'Are you sure to sign out twitter?',
-					callback: twitter_signout,
+					callback: async_callback(api_signout, 'twitter'),
 				}));
 			} else {
 				$('body').stopTime('get_timeline_twitter');
 				$('#twitter-icon').attr('src', 'static/twitter-off.gif');	
-				$('#twitter-icon').bind('click', show_signin_box);
+				$('#twitter-icon').bind('click', async_callback(show_signin_box, {
+					api: 'Twitter',
+					direct_signin: true,
+					callback: twitter_signin
+				}));
 			}
 			
 			$('#sina-icon').unbind();
@@ -201,14 +222,18 @@ function access_state(next) {
 				$('#sina-icon').attr('src', 'static/sina-on.gif');
 				get_timeline('sina');
 				$('body').everyTime('60s', 'get_timeline_sina', async_callback(get_timeline, 'sina'));
-				$('#twitter-icon').bind('click', async_callback(show_confirm_box, {
+				$('#sina-icon').bind('click', async_callback(show_confirm_box, {
 					text: 'Are you sure to sign out sina weibo?',
-					callback: sina_signout,
+					callback: async_callback(api_signout, 'sina'),
 				}));
 			} else {
 				$('body').stopTime('get_timeline_sina');
-				$('#twitter-icon').attr('src', 'static/twitter-off.gif');	
-				$('#twitter-icon').bind('click', show_signin_box);
+				$('#sina-icon').attr('src', 'static/sina-off.gif');	
+				$('#sina-icon').bind('click', async_callback(show_signin_box, {
+					api: 'Sina',
+					direct_signin: false,
+					callback: goto_sina_signin_page					
+				}));
 			}
 		},
 		function() {
@@ -256,13 +281,98 @@ function json2obj(json) {
     return o;
 }
 
-var timeline_list = {};
-timeline_list['twitter'] = [];
-timeline_list['sina'] = [];
-current_status_id = {};
-current_status_id['twitter'] = 0;
-current_status_id['sina'] = 0;
-//
+function get_list() {
+	if (content == 'Timeline') {
+		return timeline_list;
+	} else if (content == 'Mentions') {
+		return mentions_list;
+	}
+}
+
+function get_current_sid() {
+	if (content == 'Timeline') {
+		return current_status_id;
+	} else {
+		return current_mentions_id;
+	}
+}
+
+var content = 'Timeline';
+var timeline_list = {
+	twitter: [],
+	sina: [],
+};
+var current_status_id = {
+	twitter: 0,
+	sina: 0,
+};
+var mentions_list = {
+	twitter: [],
+	sina: [],
+};
+var current_mentions_id = {
+	twitter: 0,
+	sina: 0,
+};
+
+function content_switch(con) {
+	$('#page-name').text(con);
+	content = con;
+	$("#new-message").hide();
+	refresh_timeline();
+	access_state();
+}
+
+function related_results(from, id) {
+	$("#d" + id.toString()).html('<img src="static/loading.gif" />');
+	if (from == 'Sina') {
+		api_url = '/sina_api/related_results';
+	} else if (from == 'Twitter') {
+		api_url = '/twitter_api/related_results';
+	}
+	
+	var access_token = $.cookie('access_token')
+	var params = {
+		access_token: access_token,
+		id: id
+	};	
+	API_call(
+			api_url,
+			params,
+			function(json) {
+				$("#d" + id.toString()).html('');
+				related = JSON.parse(json);
+				thtml = '';
+				if (related['in_reply_to'].length > 0) {
+					thtml += '<div>---- in reply to &darr; ----</div>'
+					list = related['in_reply_to'];
+					for (i in list) {
+						thtml += '<div>@'+ list[i]['screen_name'] +'<a href="#" class="note-action" onclick="rt(\'' + list[i]['screen_name'] + '\', \'p' + list[i]['id'] +'\')">RT</a></div>';
+						thtml += '<div id="p' + list[i]['id']  + '">'+ list[i]['text'] +'</div>';
+						thtml += '<div class="status-foot">'+ time_format(list[i]["created_at"]) +'</div>';
+					}
+					
+				}
+				if (related['replies'].length > 0) {
+					thtml += '<div>---- replies &darr; ----</div>'
+					list = related['replies'];
+					for (i in list) {
+						thtml += '<div>@'+ list[i]['screen_name'] +'<a href="#" class="note-action" onclick="rt(\'' + list[i]['screen_name'] + '\', \'p' + list[i]['id'] +'\')">RT</a></div>';
+						thtml += '<div id="p' + list[i]['id']  + '">'+ list[i]['text'] +'</div>';
+						thtml += '<div class="status-foot">'+ time_format(list[i]["created_at"]) +'</div>';
+					}
+					
+				}
+				$("#d" + id.toString()).html(thtml);
+			},
+			function() {
+				show_message_bar("Oops! Get related result failed!");
+			},
+			3
+			);
+}
+
+// 
 //
 //
 //
@@ -270,31 +380,91 @@ current_status_id['sina'] = 0;
 function refresh_timeline() {
 	var thtml = '';
 	var list = [];
+	var timeline_list = get_list();
 	for (api in timeline_list) {
 	    list = list.concat(timeline_list[api]);
 	}
 	list.sort(function (a, b) {return b['timestamp'] - a['timestamp']});
     for (i in list) {
 	    thtml += '<div class="note">';
-	    thtml += '<div class="profile-image"><img src="' + list[i]['profile_image_url'] + '" /></div>';
-	    thtml += '<div class="status">'
-	    thtml += '<div><span>@' + list[i]['screen_name'] + '</span><span class="note-time">' + list[i]["created_at"] + '</span><a href="#" class="note-action" onclick="rt(\'' + list[i]['screen_name'] + '\', \'post' + list[i]['pid'] +'\')">RT</a></div>';
-	    thtml += '<div class="note-content"><span id="post' + list[i]['id']  + '">' + list[i]["text"] + '</span></div>';
-	    thtml += '</div><div><hr /></li></div></div>';
+	    thtml += '  <div class="profile-image"><img src="' + list[i]['profile_image_url'] + '" /></div>';
+	    thtml += '  <div class="status">'
+	    thtml += '    <div>';
+	    thtml += '      <span>@' + list[i]['screen_name'] + '</span>';
+	    thtml += '      <a href="javascript: void(0)" class="note-action" onclick="rt(\'' + list[i]['screen_name'] + '\', \'p' + list[i]['id'] +'\')">RT</a>';
+	    if (list[i]['in_reply_to_status_id'])
+	        thtml += '      <a href="javascript: void(0)" class="note-action" onclick="related_results(\'' + list[i]['from'] + '\', \'' + list[i]['id'] + '\')">Related</a>';
+	    thtml += '    </div>';
+	    thtml += '    <div class="note-content"><span id="p' + list[i]['id']  + '">' + list[i]["text"] + '</span></div>';
+	    thtml += '    <div>'
+	    thtml += '	    <span class="status-foot">' + time_format(list[i]["created_at"]) + '</span>'
+	    thtml += '	    <span class="status-foot">From</span>'
+	    thtml += '	    <span class="status-foot">' + list[i]['from'] + '</span>'
+	    thtml += '	  </div>';
+	    thtml += '	  <div id="d' + list[i]['id']  + '">';
+	    thtml += '	  </div>';
+	    thtml += '  </div>';
+	    thtml += '  <div><hr /></div>';
+	    thtml += '</div>';
     }
 	$("#notes").html(thtml);
+	$("#new-message-number").text('');
+	$("#new-message").fadeOut('normal');
+}
+
+var get_timeline_lock = {
+	sina: {
+		Timeline: false,
+		Mentions: false
+	},
+	twitter: {
+		Timeline: false,
+	    Mentions: false
+	}
+}
+
+function strint_isgrt(a, b) {
+	//
+	// 这个是两个字符串型数字比较的函数 默认假设a和b都是非零数字开头的字符串
+	// 且不包含其他非阿拉伯数字字符
+	//
+	
+	
+	if (a.length > b.length) {
+		return true;
+	} else if (a.length < b.length) {
+		return false;
+	} else {
+		return a > b;
+	}
 }
 
 function get_timeline(api_name) {
+	var sid = get_current_sid();
+	var tl = get_list();
 	var access_token = $.cookie('access_token')
 	var param = {
 		access_token: access_token
 	};	
-	if (current_status_id[api_name] != 0)
-		param['since_id'] = current_status_id[api_name];
-		
+	var con = content;
+	//
+	// 如果有一个api请求进来的时候正好有一个同样的api的请求正在被执行则
+	// 放弃执行这个API请求
+	//
+	if (get_timeline_lock[api_name][con] == true)
+		return ;
+	get_timeline_lock[api_name][con] = true;
+	
+	if (sid[api_name] != 0)
+		param['since_id'] = sid[api_name];
+	
+	if (con == 'Timeline') {
+		request = 'home_timeline';
+	} else if (con == 'Mentions') {
+		request = 'mentions';
+	}
 	API_call(
-		'/' + api_name + '_api/home_timeline',
+		'/' + api_name + '_api/' + request,
 		param,
 		function(json) {
             res = JSON.parse(json);
@@ -303,24 +473,40 @@ function get_timeline(api_name) {
             //
             // 返回长度为0则表示没有新状态, 退出即可
             //
-            if (res.length == 0)
-            	return
-            	
-            for (i = 0; i < res.length && res[i]['id'] > current_status_id[api_name]; ++i) {
-            	res[i]['timestamp'] = Date.parse(res[i]['created_at']);
-            	res[i]['created_at'] = time_format(new Date(res[i]['created_at']));
-            	tweet_list.push(res[i]);
+            if (res.length == 0) {
+            	get_timeline_lock[api_name][con] = false;
+            	return ;
             }
-            timeline_list[api_name] = tweet_list.concat(timeline_list[api_name]);
-            current_status_id[api_name] = timeline_list[api_name][0]['id'];
-            refresh_timeline();
+            	
+            var c = 0;
+            for (i = 0; i < res.length && strint_isgrt(res[i]['id'], sid[api_name]); ++i) {
+            	res[i]['timestamp'] = Date.parse(res[i]['created_at']);
+            	tweet_list.push(res[i]);
+            	c++;
+            }
+            tl[api_name] = tweet_list.concat(tl[api_name]);
+            sid[api_name] = tl[api_name][0]['id'];
+            //
+            // 显示新的消息数目
+            //
+            if (c != 0) {
+                if ($('#new-message-number').text() == '') {
+                	$('#new-message').slideDown('normal');
+                	$('#new-message-number').text(c.toString());
+                } else {
+                	$('#new-message-number').text((parseInt($('#new-message-number').text()) + c).toString());
+                }
+            }
+            get_timeline_lock[api_name][con] = false;
 		},
 		function() {
-			show_message_bar("Oops! update timeline failed!");
+			// show_message_bar("Oops! update timeline failed!");
+			get_timeline_lock[api_name][con] = false;
 		},
 		3
     );
 }
+
 function new_note() {
 	var access_token = $.cookie('access_token')
 	if (access_token == null)

@@ -99,10 +99,10 @@ class ApiHandler(tornado.web.RequestHandler):
             access_token = self.get_argument('access_token')
             db = DB()
             self.write(tornado.escape.json_encode(db.access_state(access_token)))
-        elif request == "remove_twitter_access_token":
+        elif request == "remove_api_access_token":
             access_token = self.get_argument('access_token')
             db = DB()
-            if False == db.remove_twitter_access_token(access_token):
+            if False == db.remove_api_access_token(self.get_argument('api'), access_token):
                 raise tornado.web.HTTPError(403)
 
 class LogoutHandler(tornado.web.RequestHandler):
