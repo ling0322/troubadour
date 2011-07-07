@@ -10,7 +10,7 @@ function hide_signin_box() {
     $("#signin-main").slideUp("normal");
 }
 function hide_confirm_box() {
-	$("#confirm-main").slideUp("normal")
+	$("#confirm-main").slideUp("normal");
 }
 function show_message_bar(text) {
     $("#message").text(text);
@@ -97,24 +97,23 @@ function API_post(kwargs) {
 
 function api_signout(api) {
 	hide_confirm_box();
-	show_message_bar('signing out ...');
+	show_message_bar('Signing out ...');
 	var access_token = $.cookie('access_token')
 	if (access_token == null)
 		return false;
 	
 	var param = {
 		access_token: access_token,
-		api: api
 	};
 	API_call(
-			'/api/remove_api_access_token',
+			'/' + api + '_api/signout',
 			param,
 			function(body) {
 				hide_message_bar();
 				access_state();
 			},
 			function() {
-				show_message_bar("Oops! " + api  + " signin failed!");
+				show_message_bar("Oops! " + api  + " signout failed!");
 			},
 			3
 			);	
@@ -177,6 +176,8 @@ function goto_sina_signin_page() {
 	return false;
 }
 
+
+var access_api = {};
 function access_state(next) {
 	//
 	// 验证cookies里面的access_token是否有效
@@ -193,6 +194,7 @@ function access_state(next) {
 		param,
 		function(body) {
 			state = JSON.parse(body);
+			access_api = state;
 			//
 			// 先把所有的定时器移除掉
 			//
@@ -201,7 +203,7 @@ function access_state(next) {
 			$('#twitter-icon').unbind();
 			if (state['twitter'] == true) {
 				$('#twitter-icon').attr('src', 'static/twitter-on.gif');
-				get_timeline('twitter');
+				get_timeline('twitter', true);
 				$('body').everyTime('60s', 'get_timeline_twitter', async_callback(get_timeline, 'twitter'));
 				$('#twitter-icon').bind('click', async_callback(show_confirm_box, {
 					text: 'Are you sure to sign out twitter?',
@@ -220,7 +222,7 @@ function access_state(next) {
 			$('#sina-icon').unbind();
 			if (state['sina'] == true) {
 				$('#sina-icon').attr('src', 'static/sina-on.gif');
-				get_timeline('sina');
+				get_timeline('sina', true);
 				$('body').everyTime('60s', 'get_timeline_sina', async_callback(get_timeline, 'sina'));
 				$('#sina-icon').bind('click', async_callback(show_confirm_box, {
 					text: 'Are you sure to sign out sina weibo?',
@@ -233,6 +235,28 @@ function access_state(next) {
 					api: 'Sina',
 					direct_signin: false,
 					callback: goto_sina_signin_page					
+				}));
+			}
+			
+			$('#qq-icon').unbind();
+			if (state['qq'] == true) {
+				$('#qq-icon').attr('src', 'static/qq-on.png');
+				get_timeline('qq', true);
+				$('body').everyTime('60s', 'get_timeline_qq', async_callback(get_timeline, 'qq'));
+				$('#qq-icon').bind('click', async_callback(show_confirm_box, {
+					text: 'Are you sure to sign out Tencent weibo?',
+					callback: async_callback(api_signout, 'qq'),
+				}));
+			} else {
+				$('body').stopTime('get_timeline_qq');
+				$('#qq-icon').attr('src', 'static/qq-off.png');	
+				$('#qq-icon').bind('click', async_callback(show_signin_box, {
+					api: 'QQ',
+					direct_signin: false,
+					callback: function () {
+						window.location.href='qq_api/access_token';
+						return false;
+					},				
 				}));
 			}
 		},
@@ -301,18 +325,22 @@ var content = 'Timeline';
 var timeline_list = {
 	twitter: [],
 	sina: [],
+	qq: [],
 };
 var current_status_id = {
 	twitter: 0,
 	sina: 0,
+	qq: 0,
 };
 var mentions_list = {
 	twitter: [],
 	sina: [],
+	qq: [],
 };
 var current_mentions_id = {
 	twitter: 0,
 	sina: 0,
+	qq: 0,
 };
 
 function content_switch(con) {
@@ -329,6 +357,8 @@ function related_results(from, id) {
 		api_url = '/sina_api/related_results';
 	} else if (from == 'Twitter') {
 		api_url = '/twitter_api/related_results';
+	} else if (from == 'QQ') {
+		api_url = '/qq_api/related_results';
 	}
 	
 	var access_token = $.cookie('access_token')
@@ -367,6 +397,7 @@ function related_results(from, id) {
 			},
 			function() {
 				show_message_bar("Oops! Get related result failed!");
+				$("#d" + id.toString()).html('');$("#d" + id.toString()).html('');
 			},
 			3
 			);
@@ -420,7 +451,11 @@ var get_timeline_lock = {
 	twitter: {
 		Timeline: false,
 	    Mentions: false
-	}
+	},
+	qq: {
+		Timeline: false,
+	    Mentions: false
+	},
 }
 
 function strint_isgrt(a, b) {
@@ -439,7 +474,7 @@ function strint_isgrt(a, b) {
 	}
 }
 
-function get_timeline(api_name) {
+function get_timeline(api_name, refresh_tl) {
 	var sid = get_current_sid();
 	var tl = get_list();
 	var access_token = $.cookie('access_token')
@@ -489,7 +524,7 @@ function get_timeline(api_name) {
             //
             // 显示新的消息数目
             //
-            if (c != 0) {
+            if (c != 0 && !refresh_tl) {
                 if ($('#new-message-number').text() == '') {
                 	$('#new-message').slideDown('normal');
                 	$('#new-message-number').text(c.toString());
@@ -498,6 +533,9 @@ function get_timeline(api_name) {
                 }
             }
             get_timeline_lock[api_name][con] = false;
+            if (refresh_tl) {
+            	refresh_timeline();
+            }
 		},
 		function() {
 			// show_message_bar("Oops! update timeline failed!");
@@ -509,6 +547,7 @@ function get_timeline(api_name) {
 
 function new_note() {
 	var access_token = $.cookie('access_token')
+	$('#loading-icon').fadeIn('normal');
 	if (access_token == null)
 		return false;
 	
@@ -518,18 +557,30 @@ function new_note() {
 	var post_params = {
 		status: $("#textarea").val()
 	};
-    API_post({
-    	url: '/twitter_api/update',
-    	params: params,
-    	post_params: post_params,
-    	success_func: function () {
-    		get_timeline();
-    	},
-    	error_func: function () {
-    		show_message_bar("Oops! update status failed!");
-    	},
-    	retry_times: 3
-    });
+	n = 0;
+	for (i in access_api) {
+		if (access_api[i] == false)
+			continue;
+		n++;
+        API_post({
+        	url: '/' + i + '_api/update',
+        	params: params,
+        	post_params: post_params,
+        	success_func: async_callback(function (api_n) {
+        		n--;
+        		if (n == 0) {
+        			$("#textarea").val('');
+        			$('#loading-icon').fadeOut('normal');
+        		}
+        		get_timeline(api_n, true);
+        	}, i),
+        	error_func: function () {
+        		show_message_bar("Oops! update status failed!");
+        		$('#loading-icon').fadeOut('normal');
+        	},
+        	retry_times: 3
+        });
+	}
 }
 
 

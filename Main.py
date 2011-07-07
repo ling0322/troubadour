@@ -12,6 +12,7 @@ import tornado.web
 import os.path
 import TwitterClient
 import SinaClient
+import QQClient
 from tornado.options import define, options
 from DB_sqlite3 import DB
 
@@ -26,6 +27,8 @@ class Application(tornado.web.Application):
             (r"/sina_api/(.*)", SinaClient.SinaClient),
             (r"/twitter_api/access_token", TwitterClient.TwitterSignInHandler),
             (r"/twitter_api/(.*)", TwitterClient.TwitterClient),
+            (r"/qq_api/access_token", QQClient.QQSignInHandler),
+            (r"/qq_api/(.*)", QQClient.QQClient),
             (r"/signin", LoginHandler),
             (r"/signup", SignUpHandler),
             (r"/logout", LogoutHandler),
@@ -36,6 +39,8 @@ class Application(tornado.web.Application):
             sina_consumer_secret = "1591823d9615cc4687776a575b73c75a",
             twitter_consumer_key = "cFDUg6a9DU08rPQTukw2w",
             twitter_consumer_secret = "gxDykjVceNppTow1LppvXTrUWNjwIOFvhnf0Imy6NQ0",
+            qq_consumer_key = "3a24ef97429a4b3db68e67ad491d0f32",
+            qq_consumer_secret = "d1822d2e15e7e0ed389ab96100044cf2",
             cookie_secret="43oETzKXQAGaYdkL5gEmGeJJFuYh7EQnp2XdTP1o/Vo=",
             template_path = os.path.join(os.path.dirname(__file__), "templates"),
             static_path = os.path.join(os.path.dirname(__file__), "static"),
@@ -99,11 +104,6 @@ class ApiHandler(tornado.web.RequestHandler):
             access_token = self.get_argument('access_token')
             db = DB()
             self.write(tornado.escape.json_encode(db.access_state(access_token)))
-        elif request == "remove_api_access_token":
-            access_token = self.get_argument('access_token')
-            db = DB()
-            if False == db.remove_api_access_token(self.get_argument('api'), access_token):
-                raise tornado.web.HTTPError(403)
 
 class LogoutHandler(tornado.web.RequestHandler):
     def get(self):

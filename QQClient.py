@@ -14,13 +14,17 @@ from tornado import httpclient
 import logging
 import tornado.escape
 import base64
+import time
+import uuid
+import binascii
+import datetime
 
-class SinaMixin(tornado.auth.OAuthMixin, tornado.web.RequestHandler):
+class QQMixin(tornado.auth.OAuthMixin, tornado.web.RequestHandler):
     
-    _OAUTH_REQUEST_TOKEN_URL = "http://api.t.sina.com.cn/oauth/request_token"
-    _OAUTH_ACCESS_TOKEN_URL = "http://api.t.sina.com.cn/oauth/access_token"
-    _OAUTH_AUTHORIZE_URL = "http://api.t.sina.com.cn/oauth/authorize"
-    _OAUTH_AUTHENTICATE_URL = "http://api.t.sina.com.cn/oauth/authorize"
+    _OAUTH_REQUEST_TOKEN_URL = "https://open.t.qq.com/cgi-bin/request_token"
+    _OAUTH_ACCESS_TOKEN_URL = "https://open.t.qq.com/cgi-bin/access_token"
+    _OAUTH_AUTHORIZE_URL = "https://open.t.qq.com/cgi-bin/authorize"
+    _OAUTH_AUTHENTICATE_URL = "https://open.t.qq.com/cgi-bin/authorize"
     _OAUTH_NO_CALLBACKS = False
 
     def authenticate_redirect(self):
@@ -30,7 +34,7 @@ class SinaMixin(tornado.auth.OAuthMixin, tornado.web.RequestHandler):
         Twitter for single-sign on.
         """
         http = tornado.httpclient.AsyncHTTPClient()
-        http.fetch(self._oauth_request_token_url(callback_uri = '/sina_api/access_token'), self.async_callback(
+        http.fetch(self._oauth_request_token_url(callback_uri = '/qq_api/access_token'), self.async_callback(
             self._on_request_token, self._OAUTH_AUTHENTICATE_URL, None))
         
     def _on_twitter_request(self, callback, response):
@@ -41,10 +45,35 @@ class SinaMixin(tornado.auth.OAuthMixin, tornado.web.RequestHandler):
             return
         callback(tornado.escape.json_decode(response.body))
         
-    def sina_request(self, path, callback, access_token=None,
+    def _oauth_request_parameters(self, url, access_token, parameters={},
+                                  method="GET"):
+        """Returns the OAuth parameters as a dict for the given request.
+
+        parameters should include all POST arguments and query string arguments
+        that will be sent with the request.
+        """
+        consumer_token = self._oauth_consumer_token()
+        base_args = dict(
+            oauth_consumer_key=consumer_token["key"],
+            oauth_token=access_token["key"],
+            oauth_signature_method="HMAC-SHA1",
+            oauth_timestamp=str(int(time.time())),
+            oauth_nonce=binascii.b2a_hex(uuid.uuid4().bytes),
+            oauth_version="1.0",
+        )
+        args = {}
+        args.update(base_args)
+        args.update(parameters)
+        signature = tornado.auth._oauth_signature(consumer_token, method, url, args,
+                                                 access_token)
+        base_args["oauth_signature"] = signature
+        return base_args
+    
+    def qq_request(self, path, callback, access_token=None,
                            post_args=None, **args):
 
-        url = "http://api.t.sina.com.cn" + path + ".json"
+        url = 'http://open.t.qq.com/api' + path
+#        self._OAUTH_VERSION = '1.0'
         if access_token:
             all_args = {}
             all_args.update(args)
@@ -64,21 +93,24 @@ class SinaMixin(tornado.auth.OAuthMixin, tornado.web.RequestHandler):
             http.fetch(url, callback=callback)
             
     def _oauth_consumer_token(self):
-        self.require_setting("sina_consumer_key", "Sina OAuth")
-        self.require_setting("sina_consumer_secret", "Sina OAuth")
+        self.require_setting("qq_consumer_key", "Sina OAuth")
+        self.require_setting("qq_consumer_secret", "Sina OAuth")
         return dict(
-            key=self.settings["sina_consumer_key"],
-            secret=self.settings["sina_consumer_secret"])
+            key=self.settings["qq_consumer_key"],
+            secret=self.settings["qq_consumer_secret"])
 
     def _oauth_get_user(self, access_token, callback):
         callback = self.async_callback(self._parse_user_response, callback)
-        self.sina_request(
-            "/users/show/" + access_token["user_id"],
-            access_token=access_token, callback=callback)
+        self.qq_request(
+            "/user/other_info",
+            access_token = access_token,
+            name = access_token['name'],
+            format = 'json',
+            callback=callback)
 
     def _parse_user_response(self, callback, user):
         if user:
-            user["username"] = user["name"]
+            user["username"] = user['data']["name"]
         callback(user)
         
     @tornado.web.asynchronous    
@@ -88,16 +120,16 @@ class SinaMixin(tornado.auth.OAuthMixin, tornado.web.RequestHandler):
             return 
         self.authenticate_redirect()
         
-class SinaSignInHanhler(SinaMixin, tornado.web.RequestHandler):
+class QQSignInHandler(QQMixin, tornado.web.RequestHandler):
         
     def _on_auth(self, user):
         user_access_token = self.get_cookie('access_token')
         access_token = {}
         access_token = user['access_token']
-        access_token['screen_name'] = user['name']
+        access_token['screen_name'] = user['username']
         json_at = tornado.escape.json_encode(access_token)
         db = DB()
-        db.update_api_access_token('sina', user_access_token, json_at)
+        db.update_api_access_token('qq', user_access_token, json_at)
         self.clear_cookie('at')
         self.redirect('/')
         pass
@@ -111,7 +143,7 @@ class SinaSignInHanhler(SinaMixin, tornado.web.RequestHandler):
         self.authenticate_redirect()
         
     pass
-class SinaClient(SinaMixin, tornado.web.RequestHandler):
+class QQClient(QQMixin, tornado.web.RequestHandler):
     '''
     A Twitter Client for Madoka frontend
     supported request:
@@ -144,16 +176,19 @@ class SinaClient(SinaMixin, tornado.web.RequestHandler):
         
         t = {}
         t['text'] = tweet['text']
-        t['name'] = tweet['user']['name']
-        t['screen_name'] = tweet['user']['screen_name']
-        t['created_at'] = tweet['created_at']
+        t['name'] = tweet['name']
+        t['screen_name'] = tweet['nick']
+        t['created_at'] = datetime.datetime.utcfromtimestamp(tweet['timestamp']).strftime("%a %b %d %X +0000 %Y")
         t['id'] = str(tweet['id'])
-        if 'retweeted_status' in tweet:
-            t['in_reply_to_status_id'] = str(tweet['retweeted_status']['id'])
+        if 'source' in tweet and tweet['source']:
+            t['in_reply_to_status_id'] = str(tweet['source']['id'])
         else:
             t['in_reply_to_status_id'] = None
-        t['profile_image_url'] = tweet['user']['profile_image_url']
-        t['from'] = 'Sina'
+        if tweet['head'] == "":
+            t['profile_image_url'] = 'http://mat1.gtimg.com/www/mb/images/head_50.jpg'
+        else:
+            t['profile_image_url'] = tweet['head'] + '/50'
+        t['from'] = 'QQ'
         return t
     
     
@@ -164,7 +199,7 @@ class SinaClient(SinaMixin, tornado.web.RequestHandler):
         #    raise tornado.httpclient.HTTPError(403)
         
         if single_tweet == False:
-            dump = [self._dumpTweet(tweet) for tweet in tweets]
+            dump = [self._dumpTweet(tweet) for tweet in tweets['data']['info']]
         else:
             dump = self._dumpTweet(tweets)
         self.write(tornado.escape.json_encode(dump))
@@ -178,8 +213,8 @@ class SinaClient(SinaMixin, tornado.web.RequestHandler):
         in_reply_to = []
         replies = []
             
-        if 'retweeted_status' in res:
-            in_reply_to.append(self._dumpTweet(res['retweeted_status']))
+        if res['data']['source']:
+            in_reply_to.append(self._dumpTweet(res['data']['source']))
         
         dump = dict(
             in_reply_to = in_reply_to,
@@ -216,7 +251,7 @@ class SinaClient(SinaMixin, tornado.web.RequestHandler):
         db = DB()
         try: 
             access_token = tornado.escape.json_decode(
-                db.get_api_access_token('sina', self.get_argument('access_token'))
+                db.get_api_access_token('qq', self.get_argument('access_token'))
                 )
         except:
             raise tornado.web.HTTPError(403)
@@ -232,17 +267,17 @@ class SinaClient(SinaMixin, tornado.web.RequestHandler):
             if self.get_argument('page', None):
                 kwargs['page'] = self.get_argument('page', None)
             
-            self.sina_request(
+            self.qq_request(
                 path = "/statuses/home_timeline",
                 access_token = {u'secret': secret, u'key': key},
                 callback = self._on_fetch,
-                count = 50,
+                reqnum = 50,
                 **kwargs
                 )  
         elif request == 'mentions':
             # 得到mention一个用户的Tweet
 
-            self.sina_request(
+            self.qq_request(
                 path = "/statuses/mentions",
                 page = self.get_argument('page', 1),
                 access_token = {u'secret': secret, u'key': key},
@@ -252,8 +287,8 @@ class SinaClient(SinaMixin, tornado.web.RequestHandler):
         elif request == 'show':
             #得到某个特定id的Tweet
 
-            self.sina_request(
-                path = "/statuses/show/" + str(self.get_argument('id')),
+            self.qq_request(
+                path = "/t/show/" + str(self.get_argument('id')),
                 access_token = {u'secret': secret, u'key': key},
                 callback = self.async_callback(self._on_fetch, single_tweet = True),
                 ) 
@@ -261,17 +296,19 @@ class SinaClient(SinaMixin, tornado.web.RequestHandler):
             
             #得到某个特定id的Tweet相关的结果
 
-            self.sina_request(
-                path = "/statuses/show/" + str(self.get_argument('id')),
+            self.qq_request(
+                path = "/t/show",
                 access_token = {u'secret': secret, u'key': key},
                 callback = self._on_related_results,
+                format = 'json',
+                id = self.get_argument('id'),
                 ) 
             
         elif request == 'user_info':
             
             # 得到某个用户的信息
             
-            self.twitter_request(
+            self.qq_request(
                 path = "/users/show",
                 access_token = {u'secret': secret, u'key': key},
                 callback = self._on_user_info,
@@ -283,7 +320,7 @@ class SinaClient(SinaMixin, tornado.web.RequestHandler):
             def on_fetch(tweet):
                 pass
             
-            self.twitter_request(
+            self.qq_request(
                 path = "/statuses/destroy/" + str(self.get_argument('id')),
                 access_token = {u'secret': secret, u'key': key},
                 post_args = {},
@@ -292,21 +329,17 @@ class SinaClient(SinaMixin, tornado.web.RequestHandler):
         elif request == 'user_timeline':
             # 得到某用户的Timeline
             
-            self.sina_request(
+            self.qq_request(
                 path = "/statuses/user_timeline",
                 access_token = {u'secret': secret, u'key': key},
                 page = self.get_argument('page', 1),
                 screen_name = self.get_argument('screen_name'),
                 callback = self._on_fetch,
                 ) 
+            
         elif request == 'signout':
-            self.sina_request(
-                path = "/account/end_session",
-                access_token = {u'secret': secret, u'key': key},
-                callback = None,
-                )  
             db = DB()
-            if False == db.remove_api_access_token('sina', self.get_argument('access_token')):
+            if False == db.remove_api_access_token('qq', self.get_argument('access_token')):
                 raise tornado.web.HTTPError(403)
             self.finish()
             
@@ -322,7 +355,7 @@ class SinaClient(SinaMixin, tornado.web.RequestHandler):
         db = DB()
         try: 
             access_token = tornado.escape.json_decode(
-                db.get_api_access_token('sina', self.get_argument('access_token'))
+                db.get_api_access_token('qq', self.get_argument('access_token'))
                 )
         except:
             raise tornado.web.HTTPError(403)
@@ -350,12 +383,14 @@ class SinaClient(SinaMixin, tornado.web.RequestHandler):
             if self.get_argument('in_reply_to', None):
                 in_reply_to_param['in_reply_to_status_id'] = self.get_argument('in_reply_to', None)
             
-            self.sina_request(
-                path = "/statuses/update",
-                post_args={"status": text},
+            self.qq_request(
+                path = "/t/add",
+                post_args={"content": text},
                 access_token = {u'secret': secret, u'key': key},
+                clientip = '202.120.161.232',   # 这里需要伪造一个用户IP
                 callback = on_fetch,
-                **in_reply_to_param
+                format = 'json',
                 )       
+             
             
     

@@ -47,7 +47,7 @@ class DB(Singleton.Singleton):
         '''
         得到一个access_token能够访问的微博状态
         '''
-        self.cursor.execute("""select twitter_access_token, sina_access_token
+        self.cursor.execute("""select twitter_access_token, sina_access_token, qq_access_token
                                from user 
                                where access_token = '{0}'
                                """.format(access_token))
@@ -55,19 +55,24 @@ class DB(Singleton.Singleton):
         try:
             twitter = result[0][0]
             sina = result[0][1]
+            qq = result[0][2]
         except:
             return False
          
         twitter_state = False
         sina_state = False
+        qq_state = False
         if twitter:
             twitter_state = True
         if sina:
             sina_state = True
+        if qq:
+            qq_state = True
             
         state = dict(
             twitter = twitter_state,
             sina = sina_state,
+            qq = qq_state,
             )
         
         return state

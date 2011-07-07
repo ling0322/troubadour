@@ -4,6 +4,18 @@
     margin-left: 0px;
     margin-right: 0px;
     list-style-type: none;
+    background:#C0DEED url(/static/bg-clouds.png) repeat-x fixed 0 0;
+}
+#logo {
+	margin-bottom: 10px;
+}
+#main-arr {
+	margin-left: 30px;
+}
+#white-bg {
+	background-color: #FFFFFF;
+	border-radius: 10px;
+	padding: 20px;
 }
 h1 {
     font-family: "Lucida Grande", "Lucida Sans Unicode", Verdana, Helvetica, Arial, sans-serif;
@@ -22,7 +34,7 @@ a {
 }
 #main-content {
     margin: auto; 
-    width: 420px;
+    width: 520px;
 }
 #statusbar {
     border-bottom-width: 1px;
@@ -31,10 +43,11 @@ a {
     background-color: #FFFFFF;
     background-color: #FFFFFF;
 }
+
 #status-left {
 	float: left;
+	margin-left: 70px;
 	padding: 3px;
-	width: 120px;
 }
 #status-right {
 	float: right;
@@ -187,6 +200,11 @@ a:hover {
 	left: auto;
     right: auto;
 }
+#loading-icon {
+	display: none;
+	float: left;
+	margin: 7px;
+}
 #message-bar {
     display: none;
     font-family: arial, sans-serif;
@@ -260,8 +278,21 @@ a:hover {
     margin-left: auto;
     margin-right: auto;
 }
-
-
+#login-tips {
+	position: absolute;
+	top: 40px;
+	left: 50px;
+	float: left;
+}
+#tips-arr {
+	margin-left: 30px;
+}
+#tips-main {
+	text-shadow: 0 1px 0 #DDD;
+	background-color: #FFFFFF;
+	border-radius: 10px;
+	padding: 10px;
+}
 #message-bar-container {
     width: 100%;
     margin-top: 6px;

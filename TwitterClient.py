@@ -315,7 +315,12 @@ class TwitterClient(tornado.auth.TwitterMixin, tornado.web.RequestHandler):
         elif request == 'test':
             self.write('喵~')
             self.finish()
-             
+            
+        elif request == 'signout':
+            db = DB()
+            if False == db.remove_api_access_token('twitter', self.get_argument('access_token')):
+                raise tornado.web.HTTPError(403)
+            self.finish()
         else:
             raise tornado.httpclient.HTTPError(403, 'Invaild Request Path ~')     
             
@@ -324,7 +329,7 @@ class TwitterClient(tornado.auth.TwitterMixin, tornado.web.RequestHandler):
         db = DB()
         try: 
             access_token = tornado.escape.json_decode(
-                db.get_twitter_access_token(self.get_argument('access_token'))
+                db.get_api_access_token('twitter', self.get_argument('access_token'))
                 )
         except:
             raise tornado.web.HTTPError(403)

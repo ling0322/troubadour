@@ -16,6 +16,7 @@
     <div id="status-left">
       <img id="twitter-icon" src="static/twitter-on.gif" />
       <img id="sina-icon" src="static/sina-on.gif" />
+      <img id="qq-icon" src="static/qq-on.png" />
     </div>
     <div id="status-right">
     </div>
@@ -29,13 +30,16 @@
         </ul>
       </div>
     </div>
-    
+  </div>
+  <div id="login-tips">
+      <div id="tips-arr"><image src="static/arr2.gif" /></div>
+      <div id="tips-main">Click ICONS to sign in / sign out</div>
   </div>
   <div id="message-bar-container">
     <div id="message-bar-c1">
       <div id="message-bar">
         <span id="message"></span> 
-        <a href="#" onclick="hide_message_bar()">Hide</a>
+        <a href="javascript: void(0)" onclick="hide_message_bar()">Hide</a>
       </div>
     </div>
   </div>
@@ -71,17 +75,21 @@
 </div>
 <div id="page-container">
   <div id="main-content">
-    <h1>H0mur1a:</h1>
-    <div><textarea style="" name="textarea" id="textarea" cols="45" rows="5"></textarea></div>
-    <div><input class="blue-button"id="submit-button" type="submit" value="&nbsp;Tweet&nbsp;" style=" " onclick="return new_note()" /><p class="clear"></p></div>
-    <div id="page-name">Timeline</div>
-    <hr />
-    <div id="new-message" onclick="refresh_timeline()">
-      <span id="new-message-number"></span>&nbsp;new messages.
+    <div id="logo"><image src="static/logo.png" /></div>
+    <div id="main-arr"><image src="static/arr2.gif" /></div>
+    <div id="white-bg">
+      <div><textarea style="" name="textarea" id="textarea" cols="45" rows="5"></textarea></div>
+      <div id="loading-icon"><img src="static/loading.gif" /></div>
+      <div><input class="blue-button"id="submit-button" type="submit" value="&nbsp;Tweet&nbsp;" style=" " onclick="return new_note()" /><p class="clear"></p></div>
+      <div id="page-name">Timeline</div>
+      <hr />
+      <div id="new-message" onclick="refresh_timeline()">
+        <span id="new-message-number"></span>&nbsp;new messages.
+      </div>
+      <div id="notes">
+      </div>
+      <div class="foot">&copy;2011 ling0322</div>
     </div>
-    <div id="notes">
-    </div>
-    <div class="foot">&copy;2011 ling0322</div>
   </div>
 </div>
 
