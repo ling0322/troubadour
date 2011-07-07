@@ -34,7 +34,7 @@ class Application(tornado.web.Application):
             (r"/logout", LogoutHandler),
         ]
         settings = dict(
-            login_url = "/login",
+            login_url = "/signin",
             sina_consumer_key = "3436920788",
             sina_consumer_secret = "1591823d9615cc4687776a575b73c75a",
             twitter_consumer_key = "cFDUg6a9DU08rPQTukw2w",
@@ -54,7 +54,7 @@ class TroubadourBaseHandler(tornado.web.RequestHandler):
  
         
 class MainHandler(TroubadourBaseHandler):
-    # @tornado.web.authenticated
+    @tornado.web.authenticated
     def get(self):
         
         self.render("homura.html")

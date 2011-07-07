@@ -21,35 +21,34 @@
     } 
     .textbox {
         height: 20px;
-        width: 80%;
+        width: 100%;
         margin-bottom: 5px;
     }
-    #main-container {
-        width: 1024px;
-        margin-left: auto;
-        margin-right: auto;
-    }
-    #signin-div {
-        float: right;
+    .textloginfailed {
+        color: red;
     }
 </style>
 </head>
 
 <body>
 
-<div id="signin-div">
-  <form name="input" action="/signin" method="post" onsubmit="to_md5passwd()">
-  <li><h1>Troubadour - Sign In</h1></li>
-  {% if status == 'failed' %}
-    <div class="textloginfailed">Bad username or password!</div>
-  {% end %}
-  <hr />
-  <li>Username</li>
-  <li><input name="username" class="textbox" type="text" /></li>
-  <li>Password</li>
-  <li><input name="md5passwd" id="md5passwd" class="textbox" type="password" /></li>
-  <li><input name="" type="submit" value="Sign In" id="submit-button"  /><li>
-  </form>
+<div class="logindiv">
+  <div id="logo"><image src="static/logo.png" /></div>
+  <div id="main-arr"><image src="static/arr2.gif" /></div>
+  <div id="white-bg">
+    <form name="input" action="/signin" method="post" onsubmit="to_md5passwd()">
+    {% if status == 'failed' %}
+      <div class="textloginfailed">Bad username or password!</div>
+    {% end %}
+    <div>Username</div>
+    <div><input name="username" class="textbox" type="text" /></div>
+    <div>Password</div>
+    <div><input name="md5passwd" id="md5passwd" class="textbox" type="password" /></div>
+    <div><a href="/signup">Create an account</a></div>
+    <div><input class="blue-button" name="" type="submit" value="Sign In" id="submit-button"  /><div>
+    <div class="clear"></div>
+    </form>
+  </div>
 </div>
 </body>
 </html>

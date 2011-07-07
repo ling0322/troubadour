@@ -122,7 +122,7 @@ function api_signout(api) {
 
 function twitter_signin() {
 	hide_signin_box();
-	show_message_bar('signing in ...');
+	show_message_bar('Signing in Twitter ...');
 	var access_token = $.cookie('access_token')
 	if (access_token == null)
 		return false;
@@ -282,7 +282,7 @@ function verify_access_token(next) {
 		param,
 		init_UI,
 		function() {
-			show_message_bar("Oops! access_token vaildation failed!");
+			window.location.href = "/signin";
 		},
 		3
 		);

@@ -2,13 +2,18 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<title>Troubadour Sign Up</title>
+<title>Troubadour Sign in</title>
 <script src="static/jquery-1.5.2.js"></script>
 <script src="static/jquery.md5.js"></script>
 <link rel="stylesheet" type="text/css" href="static/homura.css" />
 <script type="text/javascript">
     function to_md5passwd() {
+    	if ($("#md5passwd").val() != $("#md5passwd2").val()) {
+    		alert("Two password are different!");
+    		return false;
+    	}
         $("#md5passwd").val($.md5($("#md5passwd").val()));
+    	return true;
     }
 </script>
 <style type="text/css">
@@ -21,7 +26,7 @@
     } 
     .textbox {
         height: 20px;
-        width: 80%;
+        width: 100%;
         margin-bottom: 5px;
     }
     .textloginfailed {
@@ -33,18 +38,23 @@
 <body>
 
 <div class="logindiv">
-  <form name="input" action="/signup" method="post" onsubmit="return to_md5passwd()">
-  <li><h1>Troubadour - Sign Up</h1></li>
-  {% if status == 'failed' %}
-    <div class="textloginfailed">Bad username or password!</div>
-  {% end %}
-  <hr />
-  <li>Username</li>
-  <li><input name="username" class="textbox" type="text" /></li>
-  <li>Password</li>
-  <li><input name="md5passwd" id="md5passwd" class="textbox" type="password" /></li>
-  <li><input name="" type="submit" value="Sign In" id="submit-button"  /><li>
-  </form>
+  <div id="logo"><image src="static/logo.png" /></div>
+  <div id="main-arr"><image src="static/arr2.gif" /></div>
+  <div id="white-bg">
+    <form name="input" action="/signup" method="post" onsubmit="return to_md5passwd()">
+    {% if status == 'failed' %}
+      <div class="textloginfailed">Bad username or password!</div>
+    {% end %}
+    <div>Username</div>
+    <div><input name="username" class="textbox" type="text" /></div>
+    <div>Password</div>
+    <div><input name="md5passwd" id="md5passwd" class="textbox" type="password" /></div>
+    <div>Confirm-password</div>
+    <div><input name="md5passwd2" id="md5passwd2" class="textbox" type="password" /></div>
+    <div><input class="blue-button" name="" type="submit" value="Create my account" id="submit-button"  /><div>
+    <div class="clear"></div>
+    </form>
+  </div>
 </div>
 </body>
 </html>
